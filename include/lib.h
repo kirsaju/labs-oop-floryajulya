@@ -3,4 +3,4 @@
 #include <string>
 #include <stdexcept>
 
-bool checkBracesValidity(std::string str);
+bool checkBracesValidity(const std::string &str);
