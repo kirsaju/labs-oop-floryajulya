@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <lib.h>
 
-TEST(HelloTest, BasicAssertions) {
+TEST(Test1, BasicAssertions) {
   // arrange 
   std::string str = "(())";
 
@@ -11,7 +11,7 @@ TEST(HelloTest, BasicAssertions) {
   EXPECT_EQ(result, true);
 }
 
-TEST(HelloTest2, BasicAssertions) {
+TEST(Test2, BasicAssertions) {
   // arrange 
   std::string str = ")(()))";
 
@@ -21,7 +21,7 @@ TEST(HelloTest2, BasicAssertions) {
   EXPECT_EQ(result, false);
 }
 
-TEST(HelloTest3, BasicAssertions) {
+TEST(Test3, BasicAssertions) {
   // arrange 
   std::string str = "";
 
@@ -31,7 +31,7 @@ TEST(HelloTest3, BasicAssertions) {
   EXPECT_EQ(result, true);
 }
 
-TEST(HelloTest4, BasicAssertions) {
+TEST(Test4, BasicAssertions) {
   // arrange
   std::string str = "(()))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))";
 
