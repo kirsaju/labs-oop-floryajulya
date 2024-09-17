@@ -1,10 +1,14 @@
 #include <iostream>
-
 #include "lib.h"
 
-using namespace std;
-
 int main() {
-    cout << "Bruh: " << endl
-         << A() << endl;
+    std::string str;
+    std::cin >> str;
+    try {
+        std::cout << checkBracesValidity(str) << std::endl;
+    }
+    catch(std::invalid_argument ex) {
+        std::cout << ex.what() << std::endl;
+    }
+    return 0;
 }

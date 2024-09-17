@@ -1,14 +1,46 @@
 #include <gtest/gtest.h>
-
+#include <lib.h>
 
 TEST(HelloTest, BasicAssertions) {
   // arrange 
-  int first = 2;
-  int second = 5;
+  std::string str = "(())";
 
   // act
-  int sum = first + second;
-
+  bool result = checkBracesValidity(str);
   // assert
-  EXPECT_EQ(sum, 7);
+  EXPECT_EQ(result, true);
+}
+
+TEST(HelloTest2, BasicAssertions) {
+  // arrange 
+  std::string str = ")(()))";
+
+  // act
+  bool result = checkBracesValidity(str);
+  // assert
+  EXPECT_EQ(result, false);
+}
+
+TEST(HelloTest3, BasicAssertions) {
+  // arrange 
+  std::string str = "";
+
+  // act
+  bool result = checkBracesValidity(str);
+  // assert
+  EXPECT_EQ(result, true);
+}
+
+TEST(HelloTest4, BasicAssertions) {
+  // arrange
+  std::string str = "(()))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))";
+
+  try {
+    // act
+    bool result = checkBracesValidity(str);
+  }
+  catch (std::invalid_argument ex) {
+    // assert
+    EXPECT_STREQ("String limit", ex.what());
+  }
 }
