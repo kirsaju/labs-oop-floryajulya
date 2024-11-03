@@ -1,21 +1,26 @@
 #include "point.h"
 
-double Point::getX() const {
+template<Scalar T>
+T Point<T>::getX() const {
     return x;
 }
 
-double Point::getY() const {
+template<Scalar T>
+T Point<T>::getY() const {
     return y;
 }
 
-void Point::setX(double xVal) {
+template<Scalar T>
+void Point<T>::setX(T xVal) {
     x = xVal;
 }
 
-void Point::setY(double yVal) {
+template<Scalar T>
+void Point<T>::setY(T yVal) {
     y = yVal;
 }
 
-bool Point::operator==(const Point& other) const {
+template<Scalar T>
+bool Point<T>::operator==(const Point<T>& other) const {
     return x == other.x && y == other.y;
 }

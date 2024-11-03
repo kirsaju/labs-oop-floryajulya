@@ -1,7 +1,7 @@
 #include "figure.h"
 
-
-std::ostream &operator<<(std::ostream &os, const Figure &figure) {
+template<Scalar T>
+std::ostream &operator<<(std::ostream &os, const Figure<T> &figure) {
     figure.Print(os);
     return os;
 }
