@@ -1,109 +1,316 @@
 #include <gtest/gtest.h>
-#include "hexagon.h"
-#include "octagon.h"
-#include "triangle.h"
+#include <stdexcept>
+#include "../include/allocator.h"
+#include "../include/list.h"
 
-TEST(HexagonTest, AreaCalculation) {
-    Hexagon<double> hex(
-        Point<double>(0, 0), Point<double>(2, 0), Point<double>(3, std::sqrt(3)),
-        Point<double>(2, 2 * std::sqrt(3)), Point<double>(0, 2 * std::sqrt(3)),
-        Point<double>(-1, std::sqrt(3))
-    );
-    double expectedArea = (3 * std::sqrt(3)) * 2;
 
-    double area = static_cast<double>(hex);
+TEST(Allocator, bad_alloc) {
+ 
+    StaticStruct<1> resource; 
+    std::pmr::polymorphic_allocator<int> allocator(&resource);
+    
+    EXPECT_THROW({
+    auto itemP = allocator.allocate(10000);}, std::bad_alloc);
+} 
+ 
 
-    EXPECT_NEAR(area, expectedArea, 1e-5);
+TEST(Allocator, alloc_empty) { 
+    struct Item { 
+        int *counter; 
+        Item (int *counterVal) : counter{counterVal} { ++(*counter); } 
+        ~Item () { --(*counter); } 
+    }; 
+    int counter = 0; 
+ 
+    StaticStruct<1024> resource; 
+    std::pmr::polymorphic_allocator<Item> allocator(&resource); 
+ 
+    auto itemP = allocator.allocate(1); 
+    allocator.construct(itemP, &counter); 
+ 
+    bool result = counter == 1; 
+    ASSERT_TRUE(result == true); 
+} 
+ 
+TEST(Allocator, alloc_some) { 
+    struct Item { 
+        int *counter; 
+        Item (int *counterVal) : counter{counterVal} { ++(*counter); } 
+        ~Item () { --(*counter); } 
+    }; 
+    int counter = 0; 
+ 
+    StaticStruct<1024> resource; 
+    std::pmr::polymorphic_allocator<Item> allocator(&resource); 
+ 
+    auto itemP = allocator.allocate(2); 
+    allocator.construct(itemP, &counter); 
+    allocator.construct(itemP + 1, &counter); 
+ 
+    bool result = counter == 2; 
+    ASSERT_TRUE(result == true); 
+} 
+ 
+TEST(Allocator, alloc_begin) { 
+    struct Item { 
+        int *counter; 
+        Item (int *counterVal) : counter{counterVal} { ++(*counter); } 
+        ~Item () { --(*counter); } 
+    }; 
+    int counter = 0; 
+ 
+    StaticStruct<1024> resource; 
+    std::pmr::polymorphic_allocator<Item> allocator(&resource); 
+ 
+    auto itemP = allocator.allocate(1); 
+    allocator.construct(itemP, &counter); 
+    auto itemP2 = allocator.allocate(1); 
+    allocator.construct(itemP2, &counter); 
+     
+    itemP->~Item(); 
+    allocator.deallocate(itemP, 1); 
+ 
+    auto itemP3 = allocator.allocate(1); 
+    allocator.construct(itemP3, &counter); 
+ 
+    bool result = counter == 2; 
+    ASSERT_TRUE(result == true); 
+} 
+ 
+TEST(Allocator, alloc_end) { 
+    struct Item { 
+        int *counter; 
+        Item (int *counterVal) : counter{counterVal} { ++(*counter); } 
+        ~Item () { --(*counter); } 
+    }; 
+    int counter = 0; 
+ 
+    StaticStruct<1024> resource; 
+    std::pmr::polymorphic_allocator<Item> allocator(&resource); 
+ 
+    auto itemP = allocator.allocate(1); 
+    allocator.construct(itemP, &counter); 
+    auto itemP2 = allocator.allocate(1); 
+    allocator.construct(itemP2, &counter); 
+    auto itemP3 = allocator.allocate(1); 
+    allocator.construct(itemP3, &counter); 
+ 
+    bool result = counter == 3; 
+    ASSERT_TRUE(result == true); 
+} 
+ 
+TEST(Allocator, alloc_middle) { 
+    struct Item { 
+        int *counter; 
+        Item (int *counterVal) : counter{counterVal} { ++(*counter); } 
+        ~Item () { --(*counter); } 
+    }; 
+    int counter = 0; 
+ 
+    StaticStruct<1024> resource; 
+    std::pmr::polymorphic_allocator<Item> allocator(&resource); 
+ 
+    auto itemP = allocator.allocate(1); 
+    allocator.construct(itemP, &counter); 
+    auto itemP2 = allocator.allocate(1); 
+    allocator.construct(itemP2, &counter); 
+    auto itemP3 = allocator.allocate(1); 
+    allocator.construct(itemP3, &counter); 
+ 
+    itemP2->~Item(); 
+    allocator.deallocate(itemP2, 1); 
+ 
+    auto itemP4 = allocator.allocate(1); 
+    allocator.construct(itemP4, &counter); 
+ 
+    bool result = counter == 3; 
+    ASSERT_TRUE(result == true); 
+} 
+ 
+TEST(Allocator, dealloc) { 
+    struct Item { 
+        int *counter; 
+        Item (int *counterVal) : counter{counterVal} { ++(*counter); } 
+        ~Item () { --(*counter); } 
+    }; 
+    int counter = 0; 
+ 
+    StaticStruct<1024> resource; 
+    std::pmr::polymorphic_allocator<Item> allocator(&resource); 
+ 
+    auto itemP = allocator.allocate(1); 
+    allocator.construct(itemP, &counter); 
+ 
+    itemP->~Item(); 
+    allocator.deallocate(itemP, 1); 
+ 
+    bool result = counter == 0; 
+    ASSERT_TRUE(result == true); 
+} 
+ 
+TEST(Allocator, dealloc_some) { 
+    struct Item { 
+        int *counter; 
+        Item (int *counterVal) : counter{counterVal} { ++(*counter); } 
+        ~Item () { --(*counter); } 
+    }; 
+    int counter = 0; 
+ 
+    StaticStruct<1024> resource;
+    std::pmr::polymorphic_allocator<Item> allocator(&resource); 
+ 
+    auto itemP = allocator.allocate(5); 
+ 
+    for (int i = 0; i < 5; i++) { 
+        allocator.construct(itemP + i, &counter); 
+    } 
+ 
+    for (int i = 0; i < 5; i++) { 
+        (itemP + i)->~Item(); 
+    } 
+ 
+    allocator.deallocate(itemP, 5); 
+ 
+    bool result = counter == 0; 
+    ASSERT_TRUE(result == true); 
+} 
+ 
+TEST(ListTest, create_empty) { 
+    StaticStruct<1024> resource; 
+    ListAllocator<int> allocator(&resource); 
+    LinkedList<int> list(allocator); 
+    bool result = list.empty(); 
+ 
+    ASSERT_TRUE(result == true); 
+} 
+ 
+TEST(ListTest, push_back_not_empty) { 
+    StaticStruct<1024> resource; 
+    ListAllocator<int> allocator(&resource); 
+    LinkedList<int> list(allocator); 
+ 
+    list.push_back(0); 
+    bool result = list.empty(); 
+ 
+    ASSERT_TRUE(result == false); 
+}
+ 
+TEST(ListTest, pop_back) { 
+    StaticStruct<1024> resource; 
+    ListAllocator<int> allocator(&resource); 
+    LinkedList<int> list(allocator); 
+ 
+    list.push_back(6); 
+    list.pop_back();
+ 
+    bool result = list.empty(); 
+ 
+    ASSERT_TRUE(result == true); 
+} 
+
+TEST(ListTest, push_front_not_empty) { 
+    StaticStruct<1024> resource; 
+    ListAllocator<int> allocator(&resource); 
+    LinkedList<int> list(allocator); 
+ 
+    list.push_front(0); 
+    bool result = list.empty(); 
+ 
+    ASSERT_TRUE(result == false); 
+}
+ 
+TEST(ListTest, pop_front) { 
+    StaticStruct<1024> resource; 
+    ListAllocator<int> allocator(&resource); 
+    LinkedList<int> list(allocator); 
+ 
+    list.push_front(1); 
+    list.pop_front();
+ 
+    bool result = list.empty(); 
+ 
+    ASSERT_TRUE(result == true); 
+} 
+
+TEST(ListTest, iterators) { 
+    StaticStruct<1024> resource; 
+    ListAllocator<int> allocator(&resource); 
+    LinkedList<int> list(allocator); 
+ 
+    list.push_back(0); 
+    list.push_back(1); 
+    list.push_back(2); 
+ 
+    auto it = list.begin(); 
+ 
+    bool correct = true; 
+    correct = correct && *it == 0; 
+    it++; 
+    correct = correct && *it == 1; 
+    it++; 
+    correct = correct && *it == 2; 
+    it++; 
+    correct = correct && it == list.end(); 
+ 
+    bool result = correct == true; 
+ 
+    ASSERT_TRUE(result == true); 
+} 
+ 
+
+TEST(ListTest, empty_equal) { 
+    StaticStruct<1024> resource; 
+    ListAllocator<int> allocator(&resource); 
+    LinkedList<int> list(allocator); 
+    LinkedList<int> list2(allocator); 
+ 
+    bool result = list == list2;
+
+    ASSERT_TRUE(result == true); 
 }
 
-TEST(HexagonTest, CenterCalculation) {
-    Hexagon<double> hex(
-        Point<double>(0, 0), Point<double>(2, 0), Point<double>(3, std::sqrt(3)),
-        Point<double>(2, 2 * std::sqrt(3)), Point<double>(0, 2 * std::sqrt(3)),
-        Point<double>(-1, std::sqrt(3))
-    );
-    Point<double> expectedCenter(1, std::sqrt(3));
 
-    Point<double> center = hex.Center();
+TEST(ListTest, equal) { 
+    StaticStruct<1024> resource; 
+    ListAllocator<int> allocator(&resource); 
+    LinkedList<int> list(allocator); 
+    LinkedList<int> list2(allocator);
+ 
+    list.push_back(0); 
+    list.push_back(1); 
+    list.push_back(2);
+    list.push_front(3);
+ 
+    list2.push_back(0); 
+    list2.push_back(1); 
+    list2.push_back(2);
+    list2.push_front(3);
+ 
+    bool result = list == list2;
+ 
+    ASSERT_TRUE(result == true); 
+} 
 
-    EXPECT_NEAR(center.x, expectedCenter.x, 1e-5);
-    EXPECT_NEAR(center.y, expectedCenter.y, 1e-5);
-}
 
-TEST(HexagonTest, EqualityOperator) {
-    Hexagon<double> hex1(
-        Point<double>(0, 0), Point<double>(1, 0), Point<double>(1.5, std::sqrt(0.75)),
-        Point<double>(1, std::sqrt(3)), Point<double>(0, std::sqrt(3)),
-        Point<double>(-0.5, std::sqrt(0.75))
-    );
-    Hexagon<double> hex2 = hex1;
+TEST(ListTest, not_equal) { 
+    StaticStruct<1024> resource; 
+    ListAllocator<int> allocator(&resource); 
+    LinkedList<int> list(allocator); 
+    LinkedList<int> list2(allocator); 
+ 
+    list.push_back(0); 
+ 
+    list2.push_back(0);
+    list2.push_back(3); 
+ 
+    bool result = list != list2;
+    
+    ASSERT_TRUE(result == true); 
+} 
 
-    EXPECT_TRUE(hex1 == hex2);
-}
 
-TEST(OctagonTest, AreaCalculation) {
-    Octagon<double> oct(
-        Point<double>(1, 0), Point<double>(3, 0), Point<double>(4, 1), Point<double>(4, 3),
-        Point<double>(3, 4), Point<double>(1, 4), Point<double>(0, 3), Point<double>(0, 1)
-    );
-    double expectedArea = 14.0;
-
-    double area = static_cast<double>(oct);
-
-    EXPECT_NEAR(area, expectedArea, 1e-1);
-}
-
-TEST(OctagonTest, CenterCalculation) {
-    Octagon<double> oct(
-        Point<double>(1, 0), Point<double>(3, 0), Point<double>(4, 1), Point<double>(4, 3),
-        Point<double>(3, 4), Point<double>(1, 4), Point<double>(0, 3), Point<double>(0, 1)
-    );
-    Point<double> expectedCenter(2, 2);
-
-    Point<double> center = oct.Center();
-
-    EXPECT_NEAR(center.x, expectedCenter.x, 1e-5);
-    EXPECT_NEAR(center.y, expectedCenter.y, 1e-5);
-}
-
-TEST(OctagonTest, EqualityOperator) {
-    Octagon<double> oct1(
-        Point<double>(1, 0), Point<double>(2, 0), Point<double>(3, 1), Point<double>(3, 2),
-        Point<double>(2, 3), Point<double>(1, 3), Point<double>(0, 2), Point<double>(0, 1)
-    );
-    Octagon<double> oct2 = oct1;
-
-    EXPECT_TRUE(oct1 == oct2);
-}
-
-TEST(TriangleTest, AreaCalculation) {
-    Triangle<double> tri(
-        Point<double>(0, 0), Point<double>(4, 0), Point<double>(2, 3)
-    );
-    double expectedArea = 6.0;
-
-    double area = static_cast<double>(tri);
-
-    EXPECT_NEAR(area, expectedArea, 1e-5);
-}
-
-TEST(TriangleTest, CenterCalculation) {
-    Triangle<double> tri(
-        Point<double>(0, 0), Point<double>(4, 0), Point<double>(2, 3)
-    );
-    Point<double> expectedCenter(2, 1);
-
-    Point<double> center = tri.Center();
-
-    EXPECT_NEAR(center.x, expectedCenter.x, 1e-5);
-    EXPECT_NEAR(center.y, expectedCenter.y, 1e-5);
-}
-
-TEST(TriangleTest, EqualityOperator) {
-    Triangle<double> tri1(
-        Point<double>(0, 0), Point<double>(1, 0), Point<double>(0, 1)
-    );
-    Triangle<double> tri2 = tri1;
-
-    EXPECT_TRUE(tri1 == tri2);
+int main(int argc, char **argv)
+{
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
