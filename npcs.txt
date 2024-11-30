@@ -1,0 +1,5 @@
+Elf1 250 300 Elf
+Knight1 400 150 Knight
+Druid2 50 50 Druid
+Knight2 300 400 Knight
+Elf2 200 100 Elf

@@ -1,50 +1,123 @@
-#include <iostream>
-#include "include/list.h"
-#include "include/allocator.h"
+#include "./src/arena.cpp"
+#include "./src/console_logger.cpp"
+#include "./src/file_logger.cpp"
+#include "./src/Druid.cpp"
+#include "./src/Elf.cpp"
+#include "./src/knight.cpp"
+#include "./src/battle_visitor.cpp"
+#include "./src/battle_stream.cpp"
+#include <memory>
 
-struct Rectangle {
-    double a;
-    double b;
-
-    Rectangle(double r, double i) : a{r}, b{i}{}
-};
-
-std::ostream& operator<< (std::ostream& os, const Rectangle &complexNumber){
-    std::cout << "(" << complexNumber.a << "; " << complexNumber.b << ")";
-    return os;
+void printMenu()
+{
+    std::cout << "\n--- Arena Menu ---\n"
+              << "1. Add NPC manually\n"
+              << "2. Spawn random NPC\n"
+              << "3. Print NPCs\n"
+              << "4. Start battle\n"
+              << "5. Save NPCs to file\n"
+              << "6. Load NPCs from file\n"
+              << "0. Exit\n"
+              << "Choose an option: ";
 }
-
 
 int main()
 {
+    Arena arena(500, 500);
+    std::ios::sync_with_stdio(false);
 
-    StaticStruct<1024> resource; 
+    auto consoleLogger = std::make_shared<ConsoleLogger>();
+    auto fileLogger = std::make_shared<FileLogger>();
 
-    ListAllocator<int> allocator(&resource); 
+    arena.addObserver(consoleLogger);
+    arena.addObserver(fileLogger);
 
-    LinkedList<int> list(allocator);
-    list.push_front(4);
-    list.push_front(3);
-    list.push_front(2);
-    list.push_front(1);
-    list.push_back(5);
-    list.print();
-    list.pop_back();
-    list.pop_front();
-    list.print();
+    std::shared_ptr<BattleStream> battleStream = nullptr;
 
-    ListAllocator<Rectangle> allocatorRects(&resource); 
+    int choice;
+    do
+    {
+        printMenu();
+        std::cin >> choice;
 
-    LinkedList<Rectangle> listComplex(allocatorRects);
-    listComplex.push_front(Rectangle(1, 2));
-    listComplex.push_front(Rectangle(2, 2));
-    listComplex.push_front(Rectangle(3, 2));
-    listComplex.push_front(Rectangle(4, 2));
-    listComplex.push_back(Rectangle(5, 2));
-    listComplex.print();
-    listComplex.pop_back();
-    listComplex.pop_front();
-    listComplex.print();
+        switch (choice)
+        {
+        case 1:
+        {
+            std::string name, type;
+            int x, y;
+            std::cout << "Enter NPC type (Knight, Druid, Elf): ";
+            std::cin >> type;
+            std::cout << "Enter NPC name: ";
+            std::cin >> name;
+            std::cout << "Enter X coordinate (0-500): ";
+            std::cin >> x;
+            std::cout << "Enter Y coordinate (0-500): ";
+            std::cin >> y;
 
+            if (x < 0 || x > 500 || y < 0 || y > 500)
+            {
+                std::cout << "Invalid coordinates. Must be between 0 and 500.\n";
+                break;
+            }
 
+            arena.spawnNPC(type, name, x, y);
+            std::cout << "NPC added successfully.\n";
+            break;
+        }
+        case 2:
+        {
+            std::string type;
+            std::cout << "Enter NPC type (Knight, Druid, Elf): ";
+            std::cin >> type;
+
+            std::string name = type + std::to_string(rand() % 1000);
+            int x = rand() % 501;
+            int y = rand() % 501;
+
+            arena.spawnNPC(type, name);
+            std::cout << "Random NPC spawned successfully.\n";
+            break;
+        }
+        case 3:
+            std::cout << "NPCs in the arena:\n";
+            arena.printNPCs();
+            break;
+        case 4:
+        {
+            int range;
+            std::cout << "Enter battle range: ";
+            std::cin >> range;
+            arena.startBattle(range);
+            std::cout << "Battle completed.\n";
+            break;
+        }
+        case 5:
+        {
+            std::string filename;
+            std::cout << "Enter file name to save NPCs: ";
+            std::cin >> filename;
+            arena.saveNPCsToFile(filename);
+            std::cout << "NPCs saved to file.\n";
+            break;
+        }
+        case 6:
+        {
+            std::string filename;
+            std::cout << "Enter file name to load NPCs: ";
+            std::cin >> filename;
+            arena.loadNPCsFromFile(filename);
+            std::cout << "NPCs loaded from file.\n";
+            break;
+        }
+        case 0:
+            std::cout << "Exiting...\n";
+            break;
+        default:
+            std::cout << "Invalid option. Try again.\n";
+            break;
+        }
+    } while (choice != 0);
+
+    return 0;
 }
